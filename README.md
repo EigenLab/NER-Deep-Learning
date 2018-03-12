@@ -4,6 +4,10 @@ Using BiLSTM-CRF model for Chinese NER
 ## How To
 简单介绍如何使用这个project来实现自己的NER模型。
 
+### 环境要求
+- python >= 3.5
+- tensorflow == 1.4.0
+
 ### 训练数据准备
 训练数据需要是已标注的数据，标注的形式为IOB，参考/data/xueyou/fashion/data/category.ner.ac.train.txt。
 
