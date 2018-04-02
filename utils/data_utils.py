@@ -1,10 +1,14 @@
-import re
 import codecs
-from utils.model_utils import PAD, PAD_ID, UNK, UNK_ID
-from collections import Counter
-import jieba
-import random
 import math
+import random
+import re
+from collections import Counter
+
+import jieba
+
+from tqdm import tqdm
+from utils.model_utils import PAD, PAD_ID, UNK, UNK_ID
+
 
 def add_external_words(fname):
     '''
@@ -63,7 +67,7 @@ def iob_iobes(tags):
             raise Exception('Invalid IOB format!')
     return new_tags
 
-def read_data(fnames, zeros=False, lower=False):
+def read_data(fnames, zeros=False, lower=False, max_size=-1):
     '''
     Read all data into memory and convert to iobes tags.
     A line must contain at least a word and its tag.
@@ -82,7 +86,7 @@ def read_data(fnames, zeros=False, lower=False):
         sentence_num = 0
         num = 0
         print("read data from file {0}".format(fname))
-        for line in codecs.open(fname, 'r', 'utf8'):
+        for line in tqdm(codecs.open(fname, 'r', 'utf8')):
             num+=1
             line = line.rstrip()
             line = re.sub("\d+",'0',line) if zeros else line
@@ -91,6 +95,9 @@ def read_data(fnames, zeros=False, lower=False):
                     sentences.append(sentence)
                     sentence_num += 1
                     sentence = []
+
+                if max_size != -1 and len(sentences) >= max_size:
+                    break
             else:
                 # in case space is a word
                 if line[0] == " ":
@@ -232,7 +239,8 @@ def convert_dataset(sentences, word_vocab, tag_vocab, segment_vocab):
     segment2id = {s:i for i,s in enumerate(segment_vocab)}
     
     finals = []
-    for sentence in sentences:
+    print("convert dataset to training format")
+    for sentence in tqdm(sentences):
         words,tags = zip(*sentence)
         segment_tags = get_segment_tags("".join(words))
         words = [word2id[w] if w in word2id else word2id[UNK] for w in words]
@@ -242,7 +250,13 @@ def convert_dataset(sentences, word_vocab, tag_vocab, segment_vocab):
     return finals
 
 class Batch(object):
-    def __init__(self, sentences, batch_size = 20):
+    def __init__(self, sentences, batch_size = 20, max_length = 300):
+        self.max_length = max_length
+        
+        origin_cnt = len(sentences)
+        sentences = [s for s in sentences if s[1]<=self.max_length]
+        print("remove sentences with length longer than {0}, origin: {1}, remains: {2}".format(self.max_length,origin_cnt,len(sentences)))
+
         self.data_size = len(sentences)
         self.batch_size = batch_size
         self.num_batch = int(math.ceil(self.data_size / self.batch_size))

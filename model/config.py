@@ -9,7 +9,7 @@ class Config(object):
         self.learning_rate = 0.001
         self.optimizer = 'adam'
         self.max_gradient_norm = 5.0
-        self.keep_prob = 0.7
+        self.keep_prob = 0.5
         self.num_train_steps = 200000
         self.learning_decay = False
         self.start_decay_step = None
